@@ -1,0 +1,10 @@
+remote_theme: pmarsceill/just-the-docs
+# color_scheme: dark
+baseurl: /aurelia2-dnd
+search_enabled: true
+title: aurelia2-dnd
+aux_links:
+  aurelia2-dnd:
+    - "//github.com/3cp/aurelia2-dnd"
+  aurelia2-reorderable-repeat:
+    - "//github.com/3cp/aurelia2-reorderable-repeat"
