@@ -72,17 +72,17 @@ You can pass a `handler` element to `addSource()` options. `handler` should be a
 
 ## Prevent preview to show some parts
 
-You can mark parts of the source element with class `bcx-dnd-preview-hide` to prevent the part showing up in preview. For instance, mark edit button to hide it in preview.
+You can mark parts of the source element with class `dnd-preview-hide` to prevent the part showing up in preview. For instance, mark edit button to hide it in preview.
 
-> The default style for `bcx-dnd-preview-hide` is `visibility: hidden;`, not `display: none;`, this makes sure the hidden part doesn't affect the layout geometry.
+> The default style for `dnd-preview-hide` is `visibility: hidden;`, not `display: none;`, this makes sure the hidden part doesn't affect the layout geometry.
 
 ```css
-.bcx-dnd-preview .bcx-dnd-preview-hide {
+.dnd-preview .dnd-preview-hide {
   visibility: hidden !important;
 }
 ```
 
-Here is an example for both source handler and bcx-dnd-preview-hide.
+Here is an example for both source handler and dnd-preview-hide.
 
 <iframe style="width: 100%; height: 420px; border: 2px solid #343a40; border-radius: 3px;" loading="lazy" src="https://gist.dumber.app/?gist=86107f1c3d045ff3fe7db1189961f681&open=src%2Fbox.js&open=src%2Fbox.html"></iframe>
 

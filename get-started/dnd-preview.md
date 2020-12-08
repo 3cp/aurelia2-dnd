@@ -17,14 +17,14 @@ It's important to understand preview in order to understand its limitation.
 If using native HTML5 DnD API, the preview would be provided by browser automatically, you have little control of its appearance. Instead of using native API, aurelia2-dnd copied from dragula, manually draws the preview "image" by creating a DOM element.
 
 1. first, it clones the source element to a preview element.
-2. add css class "bcx-dnd-preview" to the preview element. Most importantly this class sets `position: absolute !important;` on the preview.
+2. add css class "dnd-preview" to the preview element. Most importantly this class sets `position: absolute !important;` on the preview.
 3. get calculated page offset and size of the source element, apply them to preview's `left,top,width,height` styles. So that preview will appear at the exact same location of source element.
 4. append preview element directly to HTML body. This imposes limitation on css.
 
-The default bcx-dnd-preview css class.
+The default dnd-preview css class.
 
 ```css
-.bcx-dnd-preview {
+.dnd-preview {
   position: absolute !important;
   margin: 0 !important;
   z-index: 9999 !important;
@@ -41,7 +41,7 @@ Because preview is directly under HTML body, you need to make sure source elemen
 
 If the source element's css is like `.example-container .example-box {...}`, the preview with class `.example-box` would not look right when `.example-container` is absent. If re-factoring your css to fit `aurelia2-dnd` is too much work, you can also [customize preview](./customise-preview-and-source-handler).
 
-> `aurelia2-dnd` style sheet (for `.bcx-dnd-preview` class and few others) was injected to the very top of HTML head, before your style sheets. You can overwrite them in your style sheet, for instance, overwrite the `opacity` and `box-shadow` on `.bcx-dnd-preview`. You can also apply special style to one type of your preview with `.bcx-dnd-preview.example-box {...}`. Comparing to native HTML5 DnD API, there is much better control on aurelia2-dnd's preview.
+> `aurelia2-dnd` style sheet (for `.dnd-preview` class and few others) was injected to the very top of HTML head, before your style sheets. You can overwrite them in your style sheet, for instance, overwrite the `opacity` and `box-shadow` on `.dnd-preview`. You can also apply special style to one type of your preview with `.dnd-preview.example-box {...}`. Comparing to native HTML5 DnD API, there is much better control on aurelia2-dnd's preview.
 
 ## Hierarchy limitation
 
