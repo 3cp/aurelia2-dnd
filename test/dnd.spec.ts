@@ -49,7 +49,7 @@ const model1 = () => ({type: 'one', name: 'model1'});
 const model2 = () => ({type: 'two', name: 'model2'});
 
 const box_0_0 = addBox('00', 0, 0, 50, 50);
-box_0_0.className = 'test-class'; // make sure .bcx-dnd-hide change 'display' to 'none'
+box_0_0.className = 'test-class'; // make sure .dnd-hide change 'display' to 'none'
 const box_0_1 = addBox('01', 0, 50, 50, 50);
 const box_0_2 = addBox('02', 0, 100, 50, 50);
 const box_0_3 = addBox('03', 0, 150, 50, 50);
@@ -299,7 +299,7 @@ test('drag type one, draw preview, drop on nothing', t => {
   t.notOk(target3.dnd.canDrop);
   t.deepEqual(target3.dnd.model, m);
 
-  const preview = $('.bcx-dnd-preview');
+  const preview = $('.dnd-preview');
   t.equal(preview.length, 1);
   t.equal(preview.css('left'), '0px'); // initial position of preview
   t.equal(preview.css('top'), '0px');
@@ -320,7 +320,7 @@ test('drag type one, draw preview, drop on nothing', t => {
 
   fireEvent(documentElement, 'mouseup', {which: 1, clientX: 8, clientY: 10});
 
-  t.equal($('.bcx-dnd-preview').length, 0);
+  t.equal($('.dnd-preview').length, 0);
 
   t.deepEqual(_track, [
     { event: 'dnd:willEnd', isProcessing: true, model: { name: 'model1', type: 'one' } },
@@ -336,16 +336,16 @@ test('drag type one, hover over 2 targets, drop on inner target', t => {
   const m = {type: 'one', name: 'model1'};
 
   fireEvent(box_0_0, 'mousedown', {which: 1, clientX: 5, clientY: 10});
-  t.notOk($('body').hasClass('bcx-dnd-hide-cursor'));
+  t.notOk($('body').hasClass('dnd-hide-cursor'));
 
   // first small movement, this is where dnd starts
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 6, clientY: 10});
-  const preview = $('.bcx-dnd-preview');
+  const preview = $('.dnd-preview');
   // following movement re-position preview.
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 8, clientY: 10});
   t.equal(preview.css('left'), '2px'); // moved 2px to the right
   t.equal(preview.css('top'), '0px');
-  t.notOk($('body').hasClass('bcx-dnd-hide-cursor'));
+  t.notOk($('body').hasClass('dnd-hide-cursor'));
 
   clearTrack();
 
@@ -476,7 +476,7 @@ test('drag type one with no preview, drop on outer target', t => {
   fireEvent(box_0_1, 'mousedown', {which: 1, clientX: 5, clientY: 60});
   // first small movement, this is where dnd starts
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 6, clientY: 60});
-  const preview = $('.bcx-dnd-preview');
+  const preview = $('.dnd-preview');
   t.equal(preview.length, 0);
   // following movement re-position preview.
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 8, clientY: 60});
@@ -569,7 +569,7 @@ test('drag type two with customised preview, drop on invalid target', t => {
   fireEvent(box_0_2, 'mousedown', {which: 1, clientX: 5, clientY: 110});
   // first small movement, this is where dnd starts
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 6, clientY: 110});
-  const preview = $('.bcx-dnd-preview');
+  const preview = $('.dnd-preview');
   t.equal(preview.length, 1);
   t.equal(preview.css('left'), '0px');
   t.equal(preview.css('top'), '100px');
@@ -648,17 +648,17 @@ test('drag type two with customised preview, hideCursor, centerPreviewToMousePos
 
   fireEvent(box_0_3, 'mousedown', {which: 1, clientX: 10, clientY: 160});
 
-  t.notOk($('body').hasClass('bcx-dnd-hide-cursor'));
+  t.notOk($('body').hasClass('dnd-hide-cursor'));
   // first small movement, this is where dnd starts
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 11, clientY: 160});
-  const preview = $('.bcx-dnd-preview');
+  const preview = $('.dnd-preview');
   t.equal(preview.length, 1);
   t.equal(preview.css('left'), '6px');
   t.equal(preview.css('top'), '155px');
   t.equal(preview.css('width'), '10px', 'customised width, not source element width.');
   t.equal(preview.css('height'), '10px', 'customised height, not source element height.');
 
-  t.ok($('body').hasClass('bcx-dnd-hide-cursor'));
+  t.ok($('body').hasClass('dnd-hide-cursor'));
 
   // following movement re-position preview.
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 13, clientY: 160});
@@ -770,7 +770,7 @@ test('drag type two outside of handler has no effect', t => {
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 21, clientY: 420});
 
   // since out of handler, dnd doesn't start
-  const preview = $('.bcx-dnd-preview');
+  const preview = $('.dnd-preview');
   t.equal(preview.length, 0);
   t.notOk(dndService.isProcessing);
   t.notOk(dndService.model);
@@ -821,7 +821,7 @@ test('drag type two inside of handler, drop on target', t => {
   t.deepEqual(target4.dnd.model, m);
 
   // dndPreview() returns undefined, fall back to default preview.
-  const preview = $('.bcx-dnd-preview');
+  const preview = $('.dnd-preview');
   t.equal(preview.length, 1);
   t.equal(preview.css('left'), '0px'); // initial position of preview
   t.equal(preview.css('top'), '200px');
@@ -887,7 +887,7 @@ test('drag type two inside of handler, drop on target', t => {
 
   fireEvent(documentElement, 'mouseup', {which: 1, clientX: 361, clientY: 240});
 
-  t.equal($('.bcx-dnd-preview').length, 0);
+  t.equal($('.dnd-preview').length, 0);
 
   t.deepEqual(_track, [
     { event: 'dnd:willEnd', isProcessing: true, model: { name: 'model2', type: 'two' } },
@@ -917,7 +917,7 @@ test('preview size is correct no matter what box-sizing is in use', t => {
   // first small movement, this is where dnd starts
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 21, clientY: 270});
 
-  let preview = $('.bcx-dnd-preview');
+  let preview = $('.dnd-preview');
   t.equal(preview.length, 1);
   let boundingRect = preview.get(0).getBoundingClientRect();
   t.equal(boundingRect.left, 10);
@@ -933,7 +933,7 @@ test('preview size is correct no matter what box-sizing is in use', t => {
   // first small movement, this is where dnd starts
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 71, clientY: 270});
 
-  preview = $('.bcx-dnd-preview');
+  preview = $('.dnd-preview');
   t.equal(preview.length, 1);
   boundingRect = preview.get(0).getBoundingClientRect();
   t.equal(boundingRect.left, 60);
@@ -963,16 +963,16 @@ test('drag type one, cancel with esc key', t => {
   const m = {type: 'one', name: 'model1'};
 
   fireEvent(box_0_0, 'mousedown', {which: 1, clientX: 5, clientY: 10});
-  t.notOk($('body').hasClass('bcx-dnd-hide-cursor'));
+  t.notOk($('body').hasClass('dnd-hide-cursor'));
 
   // first small movement, this is where dnd starts
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 6, clientY: 10});
-  const preview = $('.bcx-dnd-preview');
+  const preview = $('.dnd-preview');
   // following movement re-position preview.
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 8, clientY: 10});
   t.equal(preview.css('left'), '2px'); // moved 2px to the right
   t.equal(preview.css('top'), '0px');
-  t.notOk($('body').hasClass('bcx-dnd-hide-cursor'));
+  t.notOk($('body').hasClass('dnd-hide-cursor'));
 
   clearTrack();
 
@@ -981,7 +981,7 @@ test('drag type one, cancel with esc key', t => {
 
   // After esc, hover over tbox_big move 125px to the right, move 5px down
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 131, clientY: 15});
-  t.notOk(document.querySelector('.bcx-dnd-preview'));
+  t.notOk(document.querySelector('.dnd-preview'));
   t.notOk(dndService.isProcessing);
   t.notOk(dndService.model);
 
@@ -1009,7 +1009,7 @@ test('drag type one, cancel with esc key', t => {
 
   // After esc, hover over tbox_small_inner move 150px to the right, move 55px down
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 156, clientY: 65});
-  t.notOk(document.querySelector('.bcx-dnd-preview'));
+  t.notOk(document.querySelector('.dnd-preview'));
   t.notOk(dndService.isProcessing);
   t.notOk(dndService.model);
   t.notOk(target1.dnd.isProcessing);

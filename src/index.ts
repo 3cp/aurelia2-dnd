@@ -65,7 +65,7 @@ interface LandingTargets {
 }
 
 // Ideally should be using aurelia-pal, but it doesn't support
-// enough DOM features for bcx-aurelia-dnd to work.
+// enough DOM features for aurelia2-dnd to work.
 
 // DndService only works in browser.
 // code can be loaded in nodejs env, as long as you don't run it.
@@ -75,10 +75,10 @@ const doc = document;
 const documentElement = doc && doc.documentElement;
 
 const css = `
-/* bcx-aurelia-dnd styles */
+/* aurelia2-dnd styles */
 
 /*
-bcx-aurelia-dnd relies on html/body margin 0.
+aurelia2-dnd relies on html/body margin 0.
 Your css stack should have done this.
 Added here as safe guard.
 */
@@ -86,7 +86,7 @@ html, body {
   margin: 0;
 }
 
-.bcx-dnd-preview {
+.dnd-preview {
   position: absolute !important;
   margin: 0 !important;
   z-index: 9999 !important;
@@ -94,19 +94,19 @@ html, body {
   box-shadow: 0 0 16px gray;
 }
 
-.bcx-dnd-preview .bcx-dnd-preview-hide {
+.dnd-preview .dnd-preview-hide {
   visibility: hidden !important;
 }
 
-.bcx-dnd-hide {
+.dnd-hide {
   display: none !important;
 }
 
-.bcx-dnd-hide-cursor .bcx-dnd-preview {
+.dnd-hide-cursor .dnd-preview {
   cursor: none !important;
 }
 
-.bcx-dnd-unselectable {
+.dnd-unselectable {
   -webkit-user-select: none !important;
   -moz-user-select: none !important;
   -ms-user-select: none !important;
@@ -200,7 +200,7 @@ function getElementBehindPreview(preview: Element | void, x: number, y: number):
   let className = '';
   if (preview) {
     className = preview.className;
-    preview.className += ' bcx-dnd-hide';
+    preview.className += ' dnd-hide';
   }
   const el = doc.elementFromPoint(x, y);
   // Restore preview
@@ -863,23 +863,23 @@ class DndService {
       if (!this._preview) return;
     }
 
-    classes.add(this._preview as Element, 'bcx-dnd-preview');
+    classes.add(this._preview as Element, 'dnd-preview');
     doc.body.appendChild(this._preview as Element);
-    classes.add(doc.body, 'bcx-dnd-unselectable');
+    classes.add(doc.body, 'dnd-unselectable');
 
     if (!customised && getComputedStyle(this._preview as Element).backgroundColor === 'rgba(0, 0, 0, 0)') {
       (this._preview as HTMLElement).style.backgroundColor = 'white';
     }
 
     if (this._hideCursor) {
-      classes.add(doc.body, 'bcx-dnd-hide-cursor');
+      classes.add(doc.body, 'dnd-hide-cursor');
     }
   }
 
   _removePreviewImage(): void {
     if (this._preview) {
-      classes.rm(doc.body, 'bcx-dnd-unselectable');
-      classes.rm(doc.body, 'bcx-dnd-hide-cursor');
+      classes.rm(doc.body, 'dnd-unselectable');
+      classes.rm(doc.body, 'dnd-hide-cursor');
       getParent(this._preview).removeChild(this._preview);
       this._preview = null;
     }
