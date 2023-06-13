@@ -1,5 +1,6 @@
 // borrowed many code from https://github.com/bevacqua/dragula.git
 import {EventAggregator} from '@aurelia/kernel';
+import {batch} from '@aurelia/runtime';
 import {trPreview, liPreview, unknownTagPreview, defaultPreview} from './preview-drawers';
 
 export interface SourceDelegate {
@@ -637,32 +638,34 @@ class DndService {
   _start(dndSource: DndSource): void {
     this.ea && this.ea.publish('dnd:willStart');
 
-    this.isProcessing = true;
-    this.model = dndSource.delegate.dndModel();
+    batch(() => {
+      this.isProcessing = true;
+      this.model = dndSource.delegate.dndModel();
 
-    this._sourceElement = dndSource.element;
-    if (dndSource.noPreview) {
-      this._noPreview = true;
-    } else if (dndSource.delegate.dndPreview) {
-      this._sourcePreview = dndSource.delegate.dndPreview(this.model);
-    }
-
-    if (!this._noPreview) {
-      if (dndSource.hideCursor) {
-        this._hideCursor = true;
+      this._sourceElement = dndSource.element;
+      if (dndSource.noPreview) {
+        this._noPreview = true;
+      } else if (dndSource.delegate.dndPreview) {
+        this._sourcePreview = dndSource.delegate.dndPreview(this.model);
       }
 
-      if (dndSource.centerPreviewToMousePosition) {
-        this._centerPreviewToMousePosition = true;
-      }
-    }
+      if (!this._noPreview) {
+        if (dndSource.hideCursor) {
+          this._hideCursor = true;
+        }
 
-    this.dndTargets.forEach(dndTarget => {
-      const canDrop = dndTarget.delegate.dndCanDrop(this.model);
-      const dnd = dndTarget.delegate.dnd;
-      dnd.canDrop = canDrop;
-      dnd.isProcessing = true;
-      dnd.model = this.model;
+        if (dndSource.centerPreviewToMousePosition) {
+          this._centerPreviewToMousePosition = true;
+        }
+      }
+
+      this.dndTargets.forEach(dndTarget => {
+        const canDrop = dndTarget.delegate.dndCanDrop(this.model);
+        const dnd = dndTarget.delegate.dnd;
+        dnd.canDrop = canDrop;
+        dnd.isProcessing = true;
+        dnd.model = this.model;
+      });
     });
 
     this.ea && this.ea.publish('dnd:didStart');
@@ -671,27 +674,29 @@ class DndService {
   _cleanup(): void {
     this._ungrab();
     this._removePreviewImage();
-    this.isProcessing = undefined;
-    this.model = undefined;
-    this._sourceElement = undefined;
-    this._noPreview = undefined;
-    this._hideCursor = undefined;
-    this._centerPreviewToMousePosition = undefined;
-    this._sourcePreview = undefined;
-    this._sourceElementRect = undefined;
-    this._offsetX = 0;
-    this._offsetY = 0;
+    batch(() => {
+      this.isProcessing = undefined;
+      this.model = undefined;
+      this._sourceElement = undefined;
+      this._noPreview = undefined;
+      this._hideCursor = undefined;
+      this._centerPreviewToMousePosition = undefined;
+      this._sourcePreview = undefined;
+      this._sourceElementRect = undefined;
+      this._offsetX = 0;
+      this._offsetY = 0;
 
-    this.dndTargets.forEach(dndTarget => {
-      const dnd = dndTarget.delegate.dnd;
-      dnd.canDrop = undefined;
-      dnd.isProcessing = undefined;
-      dnd.isHoveringShallowly = undefined;
-      dnd.isHovering = undefined;
-      dnd.model = undefined;
+      this.dndTargets.forEach(dndTarget => {
+        const dnd = dndTarget.delegate.dnd;
+        dnd.canDrop = undefined;
+        dnd.isProcessing = undefined;
+        dnd.isHoveringShallowly = undefined;
+        dnd.isHovering = undefined;
+        dnd.model = undefined;
 
-      // if turn on debounce
-      // if (dndTarget.dndHover) dndTarget.dndHover.cancel();
+        // if turn on debounce
+        // if (dndTarget.dndHover) dndTarget.dndHover.cancel();
+      });
     });
   }
 
@@ -747,28 +752,30 @@ class DndService {
 
     const {shallowTarget, possibleTargets} = this._landingTargets(e);
 
-    this.dndTargets.forEach(dndTarget => {
-      const dnd = dndTarget.delegate.dnd;
-      if (!dnd.isProcessing) return;
+    batch(() => {
+      this.dndTargets.forEach(dndTarget => {
+        const dnd = dndTarget.delegate.dnd;
+        if (!dnd.isProcessing) return;
 
-      if (dndTarget === shallowTarget) {
-        dnd.isHoveringShallowly = true;
-        dnd.isHovering = true;
+        if (dndTarget === shallowTarget) {
+          dnd.isHoveringShallowly = true;
+          dnd.isHovering = true;
 
-        if (dndTarget.dndHover) {
-          dndTarget.dndHover(this._locationInfo(dndTarget.element, e));
+          if (dndTarget.dndHover) {
+            dndTarget.dndHover(this._locationInfo(dndTarget.element, e));
+          }
+        } else if (possibleTargets.indexOf(dndTarget) >= 0) {
+          dnd.isHoveringShallowly = false;
+          dnd.isHovering = true;
+
+          if (dndTarget.dndHover) {
+            dndTarget.dndHover(this._locationInfo(dndTarget.element, e));
+          }
+        } else {
+          dnd.isHoveringShallowly = false;
+          dnd.isHovering = false;
         }
-      } else if (possibleTargets.indexOf(dndTarget) >= 0) {
-        dnd.isHoveringShallowly = false;
-        dnd.isHovering = true;
-
-        if (dndTarget.dndHover) {
-          dndTarget.dndHover(this._locationInfo(dndTarget.element, e));
-        }
-      } else {
-        dnd.isHoveringShallowly = false;
-        dnd.isHovering = false;
-      }
+      });
     });
   }
 
