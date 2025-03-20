@@ -1,5 +1,5 @@
 // borrowed many code from https://github.com/bevacqua/dragula.git
-import {EventAggregator} from '@aurelia/kernel';
+import {IEventAggregator} from '@aurelia/kernel';
 import {batch} from '@aurelia/runtime';
 import {trPreview, liPreview, unknownTagPreview, defaultPreview} from './preview-drawers';
 
@@ -373,7 +373,7 @@ function indexOfHandler(array: Array<DndSource>, handler: Element) {
 }
 
 class DndService {
-  ea: EventAggregator;
+  ea: IEventAggregator;
   dndSources: Array<DndSource>;
   dndTargets: Array<DndTarget>;
   previewDrawers: Array<PreviewDrawer>;
@@ -396,7 +396,7 @@ class DndService {
   _centerPreviewToMousePosition: boolean | void;
   _preview: Element | void;
 
-  constructor(ea: EventAggregator) {
+  constructor(ea: IEventAggregator) {
     this.ea = ea;
 
     this.dndSources = [];
@@ -894,6 +894,6 @@ class DndService {
 }
 
 // Support Aurelia DI
-DndService['inject'] = [EventAggregator];
+DndService['inject'] = [IEventAggregator];
 
 export {DndService};
