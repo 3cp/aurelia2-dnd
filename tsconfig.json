@@ -7,9 +7,9 @@
     "skipLibCheck": true,
     "declaration": true,
     "outDir": "./dist",
-    "removeComments": true,
+    "removeComments": true
   },
   "include": [
-    "src",
+    "src"
   ]
 }
