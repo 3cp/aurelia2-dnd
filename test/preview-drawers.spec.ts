@@ -1,5 +1,4 @@
-// @ts-nocheck
-import test from 'tape';
+import { expect, test } from 'vitest';
 import $ from 'jquery';
 import {trPreview, liPreview, defaultPreview, unknownTagPreview} from '../src/preview-drawers';
 
@@ -11,115 +10,103 @@ function buildHtml(domStr) {
   dom.appendTo('body');
 }
 
-test('trPreview ignores element not tr tag', t => {
+test('trPreview ignores element not tr tag', () => {
   buildHtml('<p>lorem</p>');
-  t.notOk(trPreview(doc.querySelector('p')));
-  t.end();
+  expect(trPreview(doc.querySelector('p')!)).toBeUndefined();
 });
-
-test('trPreview ignores malformed table', t => {
+test('trPreview ignores malformed table', () => {
   buildHtml('<tr><td></td></tr>');
-  t.notOk(trPreview(doc.querySelector('tr')));
-  t.end();
+  expect(trPreview(doc.querySelector('tr')!)).toBeUndefined();
 });
 
-test('trPreview copies table', t => {
+test('trPreview copies table', () => {
   buildHtml(`<table class="t"><tr class="r"><td>1</td><td>two</td><td>3</td></tr></table>`);
-  const newTable = trPreview(doc.querySelector('tr'));
-  t.equal(newTable.tagName, 'TABLE');
-  t.equal(newTable.style.width,
-          getComputedStyle(doc.querySelector('table')).width);
+  const newTable = trPreview(doc.querySelector('tr')!)!;
+  expect(newTable.tagName).toBe('TABLE');
+  expect(newTable.style.width).toBe(
+          getComputedStyle(doc.querySelector('table')!).width);
 
   const tds = doc.querySelectorAll('table tr td');
-  t.equal($(newTable).find('td').first().css('width'),
+  expect($(newTable).find('td').first().css('width')).toBe(
           getComputedStyle(tds[0]).width);
-  t.equal($(newTable).find('td').first().css('height'),
+  expect($(newTable).find('td').first().css('height')).toBe(
           getComputedStyle(tds[0]).height);
-  t.equal($(newTable).find('td:nth-child(2)').css('width'),
+  expect($(newTable).find('td:nth-child(2)').css('width')).toBe(
           getComputedStyle(tds[1]).width);
-  t.equal($(newTable).find('td:nth-child(2)').css('height'),
+  expect($(newTable).find('td:nth-child(2)').css('height')).toBe(
           getComputedStyle(tds[1]).height);
-  t.end();
 });
 
-test('liPreview ignores element not li tag', t => {
+test('liPreview ignores element not li tag', () => {
   buildHtml('<p>lorem</p>');
-  t.notOk(liPreview(doc.querySelector('p')));
-  t.end();
+  expect(liPreview(doc.querySelector('p')!)).toBeUndefined();
 });
 
-test('liPreview copies li in ul', t => {
+test('liPreview copies li in ul', () => {
   buildHtml('<ul><li>0</li><li>1</li><li>2</li></ul>');
   const li = doc.querySelectorAll('li')[1];
-  const newLiInUl = liPreview(li);
-  t.equal(newLiInUl.tagName, 'UL');
-  t.equal(newLiInUl.style.width, 'auto');
-  t.equal(newLiInUl.style.height, 'auto');
-  t.equal(newLiInUl.style.listStyleType, 'none');
+  const newLiInUl = liPreview(li)!;
+  expect(newLiInUl.tagName).toBe('UL');
+  expect(newLiInUl.style.width).toBe('auto');
+  expect(newLiInUl.style.height).toBe('auto');
+  expect(newLiInUl.style.listStyleType).toBe('none');
 
-  t.equal(newLiInUl.childElementCount, 1);
-  const newLi = newLiInUl.children[0];
-  t.equal(newLi.innerText, '1');
-  t.equal(newLi.style.width, getComputedStyle(li).width);
-  t.equal(newLi.style.height, getComputedStyle(li).height);
-  t.equal(newLi.style.flex, '0 0 auto');
-  t.end();
+  expect(newLiInUl.childElementCount).toBe(1);
+  const newLi = newLiInUl.children[0] as HTMLElement;
+  expect(newLi.innerText).toBe('1');
+  expect(newLi.style.width).toBe(getComputedStyle(li).width);
+  expect(newLi.style.height).toBe(getComputedStyle(li).height);
+  expect(newLi.style.flex).toBe('0 0 auto');
 });
 
-test('liPreview copies li in ol', t => {
+test('liPreview copies li in ol', () => {
   buildHtml('<ol><li>0</li><li>1</li><li>2</li></ol>');
   const li = doc.querySelectorAll('li')[1];
-  const newLiInOl = liPreview(li);
-  t.equal(newLiInOl.tagName, 'OL');
-  t.equal(newLiInOl.style.width, 'auto');
-  t.equal(newLiInOl.style.height, 'auto');
-  t.equal(newLiInOl.style.listStyleType, 'none');
+  const newLiInOl = liPreview(li)!;
+  expect(newLiInOl.tagName).toBe('OL');
+  expect(newLiInOl.style.width).toBe('auto');
+  expect(newLiInOl.style.height).toBe('auto');
+  expect(newLiInOl.style.listStyleType).toBe('none');
 
-  t.equal(newLiInOl.childElementCount, 1);
-  const newLi = newLiInOl.children[0];
-  t.equal(newLi.innerText, '1');
-  t.equal(newLi.style.width, getComputedStyle(li).width);
-  t.equal(newLi.style.height, getComputedStyle(li).height);
-  t.equal(newLi.style.flex, '0 0 auto');
-  t.end();
+  expect(newLiInOl.childElementCount).toBe(1);
+  const newLi = newLiInOl.children[0] as HTMLElement;
+  expect(newLi.innerText).toBe('1');
+  expect(newLi.style.width).toBe(getComputedStyle(li).width);
+  expect(newLi.style.height).toBe(getComputedStyle(li).height);
+  expect(newLi.style.flex).toBe('0 0 auto');
 });
 
-test('defaultPreview clones element', t => {
+test('defaultPreview clones element', () => {
   buildHtml('<div><p>lorem</p></div>');
-  const div = defaultPreview(doc.querySelector('div'));
-  t.equal(div.tagName, 'DIV');
-  t.equal(div.childElementCount, 1);
-  const newP = div.children[0];
-  t.equal(newP.tagName, 'P');
-  t.equal(newP.innerText, 'lorem');
-  t.end();
+  const div = defaultPreview(doc.querySelector('div')!)!;
+  expect(div.tagName).toBe('DIV');
+  expect(div.childElementCount).toBe(1);
+  const newP = div.children[0] as HTMLElement;
+  expect(newP.tagName).toBe('P');
+  expect(newP.innerText).toBe('lorem');
 });
 
-test('unknownTagPreview ignores element with non-zero size', t => {
+test('unknownTagPreview ignores element with non-zero size', () => {
   buildHtml('<div><p>lorem</p></div>');
-  t.notOk(unknownTagPreview(doc.querySelector('div')));
-  t.end();
+  expect(unknownTagPreview(doc.querySelector('div')!)).toBeUndefined();
 });
 
-test('unknownTagPreview ignores unknown tag with custom display', t => {
+test('unknownTagPreview ignores unknown tag with custom display', () => {
   buildHtml('<xyz style="display:block"><div>lorem</div><div>hello</div></xyz>');
-  t.notOk(unknownTagPreview(doc.querySelector('div')));
-  t.end();
+  expect(unknownTagPreview(doc.querySelector('div')!)).toBeUndefined();
 });
 
-test('unknownTagPreview ignores unknown tag with custom size', t => {
+test('unknownTagPreview ignores unknown tag with custom size', () => {
   buildHtml('<xyz style="width:100%;"><div>lorem</div><div>hello</div></xyz>');
-  t.notOk(unknownTagPreview(doc.querySelector('div')));
-  t.end();
+  expect(unknownTagPreview(doc.querySelector('div')!)).toBeUndefined();
 });
 
-test('unknownTagPreview clones zero size element, copies children size', t => {
+test('unknownTagPreview clones zero size element, copies children size', () => {
   buildHtml('<xyz><div>lorem</div><div>hello</div></xyz>');
-  const xyz = doc.querySelector('xyz');
-  const newXyz = unknownTagPreview(xyz);
-  t.equal(newXyz.tagName, 'XYZ');
-  t.equal(newXyz.childElementCount, 2);
-  t.equal(newXyz.style.width, '');
-  t.equal(newXyz.style.height, '');
-  t.end();
+  const xyz = doc.querySelector('xyz')! as HTMLElement;
+  const newXyz = unknownTagPreview(xyz)!;
+  expect(newXyz.tagName).toBe('XYZ');
+  expect(newXyz.childElementCount).toBe(2);
+  expect(newXyz.style.width).toBe('');
+  expect(newXyz.style.height).toBe('');
 });
