@@ -1,4 +1,4 @@
-export function trPreview(el: HTMLElement): HTMLElement {
+export function trPreview(el: HTMLElement): HTMLElement | void {
   if (el.tagName !== 'TR') return;
   if (!el.parentNode) return;
   if (!el.parentNode.parentNode || (el.parentNode.parentNode as Element).tagName !== 'TABLE') return;
@@ -28,7 +28,7 @@ export function trPreview(el: HTMLElement): HTMLElement {
   return newTable;
 }
 
-export function liPreview(el: HTMLElement): HTMLElement {
+export function liPreview(el: HTMLElement): HTMLElement | void {
   if (el.tagName !== 'LI') return;
   if (!el.parentNode) return;
   const tagName = (el.parentNode as HTMLElement).tagName;
@@ -52,7 +52,7 @@ export function liPreview(el: HTMLElement): HTMLElement {
 // For unknown tag, the default display is inline,
 // will be auto size (based on children).
 // This is very common in Aurelia's custom component.
-export function unknownTagPreview(el: HTMLElement): HTMLElement {
+export function unknownTagPreview(el: HTMLElement): HTMLElement | void {
   const computed = getComputedStyle(el);
   const isUnknownTag = computed.display === 'inline' &&
     computed.width === 'auto' &&

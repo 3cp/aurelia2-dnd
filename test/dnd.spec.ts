@@ -1,15 +1,12 @@
-// @ts-nocheck
-// not testing all edge cases in DOM/events, assumes dragula covers them all.
-// only test dnd lifecycle.
-import test from 'tape';
+import { expect, test } from 'vitest';
 import $ from 'jquery';
 import {EventAggregator} from '@aurelia/kernel';
-import {DndService} from '../src/index';
+import {DndService, SourceDelegate, TargetDelegate} from '../src/index';
 
 const doc = document;
 const documentElement = doc.documentElement;
 
-let node = doc.createElement('style');
+const node = doc.createElement('style');
 node.innerHTML = `
 .test-class {
   display: block;
@@ -23,8 +20,8 @@ const dndService = new DndService(ea);
 
 // copied from dragula test/lib/events.js
 function fireEvent(el, type, options) {
-  var o = options || {};
-  var e = document.createEvent('Event');
+  const o = options || {};
+  const e = document.createEvent('Event');
   e.initEvent(type, true, true);
   Object.keys(o).forEach(apply);
   el.dispatchEvent(e);
@@ -78,7 +75,7 @@ const tbox_small_inner = addBox('tbox_small_inner', 150, 50, 100, 100);
 const tbox_big2 = addBox('tbox_big2', 350, 0, 250, 250);
 const tbox_small_inner2 = addBox('tbox_small_inner2', 400, 50, 100, 100);
 
-let _track = [];
+let _track: any[] = [];
 
 function track(tracked) { _track.push(tracked); }
 function clearTrack() { _track = []; }
@@ -108,10 +105,10 @@ const target1 = {
       location,
     });
   }
-};
+} as TargetDelegate;
 
 const target2 = {
-  dndCanDrop(model) { return true; },
+  dndCanDrop() { return true; },
   dndDrop(location) {
     track({
       event: 'drop on tbox_small_inner',
@@ -124,7 +121,7 @@ const target2 = {
       location,
     });
   }
-};
+} as TargetDelegate;
 
 const target3 = {
   dndElement: tbox_big2,
@@ -141,7 +138,7 @@ const target3 = {
       location,
     });
   }
-};
+} as TargetDelegate;
 
 const target4 = {
   dndElement: tbox_small_inner2,
@@ -158,14 +155,14 @@ const target4 = {
       location,
     });
   }
-};
+} as TargetDelegate;
 
-test('add source', t => {
+test('add source', () => {
 
-  t.throws(() => dndService.addSource(undefined), 'missing delegate');
-  t.throws(() => dndService.addSource({dndElement: box_0_0}), 'missing dndModel()');
-  t.throws(() => dndService.addSource({dndModel: model1}), 'missing dndElement');
-  t.throws(() => dndService.addSource({dndModel: model1, dndElement: box_0_0}, {handler: 1}), 'invalid handler');
+  expect(() => dndService.addSource(undefined as unknown as SourceDelegate)).toThrow('Missing delegate for dnd source');
+  expect(() => dndService.addSource({dndElement: box_0_0} as unknown as SourceDelegate)).toThrow('Missing dndModel() method on dnd source');
+  expect(() => dndService.addSource({dndModel: model1})).toThrow('Missing dndElement or options.element');
+  expect(() => dndService.addSource({dndModel: model1, dndElement: box_0_0}, {handler: 1 as unknown as Element})).toThrow('specified handler is not a DOM element');
 
   // normal source
   dndService.addSource({dndModel: model1, dndElement: box_0_0});
@@ -191,7 +188,7 @@ test('add source', t => {
   dndService.addSource({
     dndModel: model2,
     dndElement: box_0_3,
-    dndPreview: (model) => {
+    dndPreview: () => {
       const dom = $('<div></div>');
       dom.text('+');
       dom.css('width', '10px');
@@ -201,7 +198,7 @@ test('add source', t => {
   }, {centerPreviewToMousePosition: true, hideCursor: true});
 
   // source with handler, a dndPreview returns undefined
-  dndService.addSource({dndModel: model2, dndElement: box_0_4, dndPreview: () => undefined}, {handler: box_0_4_handler});
+  dndService.addSource({dndModel: model2, dndElement: box_0_4, dndPreview: () => (undefined as unknown as Element)}, {handler: box_0_4_handler});
 
   // source with content-box box-sizing
   dndService.addSource({dndModel: model1, dndElement: box_content_box});
@@ -214,17 +211,14 @@ test('add source', t => {
     dndElement: box_0_5,
     dndCanDrag: () => false
   });
-
-  t.end();
 });
 
-test('add target', t => {
-
-  t.throws(() => dndService.addTarget(), 'missing delegate');
-  t.throws(() => dndService.addTarget({dndElement: tbox_big}), 'missing dndCanDrop() and dndDrop()');
-  t.throws(() => dndService.addTarget({dndDrop: () => 1, dndCanDrop: () => true}), 'missing dndElement');
-  t.throws(() => dndService.addTarget({dndElement: tbox_big, dndCanDrop: () => true}), 'missing dndDrop()');
-  t.throws(() => dndService.addTarget({dndElement: tbox_big, dndDrop: () => 1}), 'missing dndCanDrop()');
+test('add target', () => {
+  expect(() => dndService.addTarget(undefined as unknown as TargetDelegate)).toThrow('Missing delegate for dnd target.');
+  expect(() => dndService.addTarget({dndElement: tbox_big} as unknown as TargetDelegate)).toThrow('Missing dndCanDrop() method on delegate.');
+  expect(() => dndService.addTarget({dndDrop: () => 1, dndCanDrop: () => true})).toThrow('Missing dndElement or options.element on dnd target delegate.');
+  expect(() => dndService.addTarget({dndElement: tbox_big, dndCanDrop: () => true} as unknown as TargetDelegate)).toThrow('Missing dndDrop() method on dnd target delegate.');
+  expect(() => dndService.addTarget({dndElement: tbox_big, dndDrop: () => 1} as unknown as TargetDelegate)).toThrow('Missing dndCanDrop() method on delegate.');
 
   // normal target, can drop type 'one'
   dndService.addTarget(target1);
@@ -234,77 +228,73 @@ test('add target', t => {
 
   // target can drop type 'two'
   dndService.addTarget(target3);
-
-  t.end();
 });
 
-test('all targets have empty dnd property', t => {
+test('all targets have empty dnd property', () => {
+  expect(dndService.isProcessing).toBeFalsy();
+  expect(dndService.model).toBeFalsy();
 
-  t.notOk(dndService.isProcessing);
-  t.notOk(dndService.model);
+  expect(target1.dnd!.isProcessing).toBeFalsy();
+  expect(target1.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target1.dnd!.isHovering).toBeFalsy();
+  expect(target1.dnd!.canDrop).toBeFalsy();
+  expect(target1.dnd!.model).toBeFalsy();
 
-  t.notOk(target1.dnd.isProcessing);
-  t.notOk(target1.dnd.isHoveringShallowly);
-  t.notOk(target1.dnd.isHovering);
-  t.notOk(target1.dnd.canDrop);
-  t.notOk(target1.dnd.model);
+  expect(target2.dnd!.isProcessing).toBeFalsy();
+  expect(target2.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target2.dnd!.isHovering).toBeFalsy();
+  expect(target2.dnd!.canDrop).toBeFalsy();
+  expect(target2.dnd!.model).toBeFalsy();
 
-  t.notOk(target2.dnd.isProcessing);
-  t.notOk(target2.dnd.isHoveringShallowly);
-  t.notOk(target2.dnd.isHovering);
-  t.notOk(target2.dnd.canDrop);
-  t.notOk(target2.dnd.model);
-
-  t.notOk(target3.dnd.isProcessing);
-  t.notOk(target3.dnd.isHoveringShallowly);
-  t.notOk(target3.dnd.isHovering);
-  t.notOk(target3.dnd.canDrop);
-  t.notOk(target3.dnd.model);
-  t.end();
+  expect(target3.dnd!.isProcessing).toBeFalsy();
+  expect(target3.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target3.dnd!.isHovering).toBeFalsy();
+  expect(target3.dnd!.canDrop).toBeFalsy();
+  expect(target3.dnd!.model).toBeFalsy();
 });
 
-test('drag type one, draw preview, drop on nothing', t => {
+test('drag type one, draw preview, drop on nothing', () => {
   const m = {type: 'one', name: 'model1'};
 
   fireEvent(box_0_0, 'mousedown', {which: 1, clientX: 5, clientY: 10});
 
   // only mouse down, not yet dnd;
-  t.notOk(dndService.isProcessing);
-  t.notOk(dndService.model);
+  expect(dndService.isProcessing).toBeFalsy();
+  expect(dndService.model).toBeFalsy();
 
-  t.deepEqual(_track, []);
+  expect(_track).toEqual([]);
 
   // first small movement, this is where dnd starts
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 6, clientY: 10});
 
   // moved mouse, dnd starts
-  t.ok(dndService.isProcessing);
-  t.deepEqual(dndService.model, m);
+  expect(dndService.isProcessing).toBeTruthy();
+  expect(dndService.model).toEqual(m);
 
-  t.ok(target1.dnd.isProcessing);
-  t.notOk(target1.dnd.isHoveringShallowly);
-  t.notOk(target1.dnd.isHovering);
-  t.ok(target1.dnd.canDrop);
-  t.deepEqual(target1.dnd.model, m);
+  expect(target1.dnd!.isProcessing).toBeTruthy();
+  expect(target1.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target1.dnd!.isHovering).toBeFalsy();
+  expect(target1.dnd!.canDrop).toBeTruthy();
+  expect(target1.dnd!.model).toEqual(m);
 
-  t.ok(target2.dnd.isProcessing);
-  t.notOk(target2.dnd.isHoveringShallowly);
-  t.notOk(target2.dnd.isHovering);
-  t.ok(target2.dnd.canDrop);
-  t.deepEqual(target2.dnd.model, m);
+  expect(target2.dnd!.isProcessing).toBeTruthy();
+  expect(target2.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target2.dnd!.isHovering).toBeFalsy();
+  expect(target2.dnd!.canDrop).toBeTruthy();
+  expect(target2.dnd!.model).toEqual(m);
 
-  t.ok(target3.dnd.isProcessing);
-  t.notOk(target3.dnd.isHoveringShallowly);
-  t.notOk(target3.dnd.isHovering);
-  t.notOk(target3.dnd.canDrop);
-  t.deepEqual(target3.dnd.model, m);
+  expect(target3.dnd!.isProcessing).toBeTruthy();
+  expect(target3.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target3.dnd!.isHovering).toBeFalsy();
+  expect(target3.dnd!.canDrop).toBeFalsy();
+  expect(target3.dnd!.model).toEqual(m);
 
   const preview = $('.dnd-preview');
-  t.equal(preview.length, 1);
-  t.equal(preview.css('left'), '0px'); // initial position of preview
-  t.equal(preview.css('top'), '0px');
+  expect(preview.length).toBe(1);
+  expect(preview.css('left')).toBe('0px'); // initial position of preview
+  expect(preview.css('top')).toBe('0px');
 
-  t.deepEqual(_track, [
+  expect(_track).toEqual([
     { event: 'dnd:willStart', isProcessing: undefined, model: undefined },
     { event: 'dnd:didStart', isProcessing: true, model: { name: 'model1', type: 'one' } }
   ]);
@@ -313,66 +303,64 @@ test('drag type one, draw preview, drop on nothing', t => {
 
   // following movement re-position preview.
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 8, clientY: 10});
-  t.equal(preview.css('left'), '2px'); // moved 2px to the right
-  t.equal(preview.css('top'), '0px');
+  expect(preview.css('left')).toBe('2px'); // moved 2px to the right
+  expect(preview.css('top')).toBe('0px');
 
-  t.deepEqual(_track, []);
+  expect(_track).toEqual([]);
 
   fireEvent(documentElement, 'mouseup', {which: 1, clientX: 8, clientY: 10});
 
-  t.equal($('.dnd-preview').length, 0);
+  expect($('.dnd-preview').length).toBe(0);
 
-  t.deepEqual(_track, [
+  expect(_track).toEqual([
     { event: 'dnd:willEnd', isProcessing: true, model: { name: 'model1', type: 'one' } },
     { event: 'dnd:didEnd', isProcessing: undefined, model: undefined },
   ]);
 
   clearTrack();
-
-  t.end();
 });
 
-test('drag type one, hover over 2 targets, drop on inner target', t => {
+test('drag type one, hover over 2 targets, drop on inner target', () => {
   const m = {type: 'one', name: 'model1'};
 
   fireEvent(box_0_0, 'mousedown', {which: 1, clientX: 5, clientY: 10});
-  t.notOk($('body').hasClass('dnd-hide-cursor'));
+  expect($('body').hasClass('dnd-hide-cursor')).toBeFalsy();
 
   // first small movement, this is where dnd starts
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 6, clientY: 10});
   const preview = $('.dnd-preview');
   // following movement re-position preview.
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 8, clientY: 10});
-  t.equal(preview.css('left'), '2px'); // moved 2px to the right
-  t.equal(preview.css('top'), '0px');
-  t.notOk($('body').hasClass('dnd-hide-cursor'));
+  expect(preview.css('left')).toBe('2px'); // moved 2px to the right
+  expect(preview.css('top')).toBe('0px');
+  expect($('body').hasClass('dnd-hide-cursor')).toBeFalsy();
 
   clearTrack();
 
   // hover over tbox_big move 125px to the right, move 5px down
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 131, clientY: 15});
-  t.equal(preview.css('left'), '125px');
-  t.equal(preview.css('top'), '5px');
+  expect(preview.css('left')).toBe('125px');
+  expect(preview.css('top')).toBe('5px');
 
-  t.ok(target1.dnd.isProcessing);
-  t.ok(target1.dnd.isHoveringShallowly);
-  t.ok(target1.dnd.isHovering);
-  t.ok(target1.dnd.canDrop);
-  t.deepEqual(target1.dnd.model, m);
+  expect(target1.dnd!.isProcessing).toBeTruthy();
+  expect(target1.dnd!.isHoveringShallowly).toBeTruthy();
+  expect(target1.dnd!.isHovering).toBeTruthy();
+  expect(target1.dnd!.canDrop).toBeTruthy();
+  expect(target1.dnd!.model).toEqual(m);
 
-  t.ok(target2.dnd.isProcessing);
-  t.notOk(target2.dnd.isHoveringShallowly);
-  t.notOk(target2.dnd.isHovering);
-  t.ok(target2.dnd.canDrop);
-  t.deepEqual(target2.dnd.model, m);
+  expect(target2.dnd!.isProcessing).toBeTruthy();
+  expect(target2.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target2.dnd!.isHovering).toBeFalsy();
+  expect(target2.dnd!.canDrop).toBeTruthy();
+  expect(target2.dnd!.model).toEqual(m);
 
-  t.ok(target3.dnd.isProcessing);
-  t.notOk(target3.dnd.isHoveringShallowly);
-  t.notOk(target3.dnd.isHovering);
-  t.notOk(target3.dnd.canDrop);
-  t.deepEqual(target3.dnd.model, m);
+  expect(target3.dnd!.isProcessing).toBeTruthy();
+  expect(target3.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target3.dnd!.isHovering).toBeFalsy();
+  expect(target3.dnd!.canDrop).toBeFalsy();
+  expect(target3.dnd!.model).toEqual(m);
 
-  t.deepEqual(_track, [
+  expect(_track).toEqual([
     {
       event: 'hover on tbox_big',
       location: {
@@ -389,19 +377,19 @@ test('drag type one, hover over 2 targets, drop on inner target', t => {
 
   // hover over tbox_small_inner move 150px to the right, move 55px down
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 156, clientY: 65});
-  t.equal(preview.css('left'), '150px');
-  t.equal(preview.css('top'), '55px');
+  expect(preview.css('left')).toBe('150px');
+  expect(preview.css('top')).toBe('55px');
 
-  t.notOk(target1.dnd.isHoveringShallowly);
-  t.ok(target1.dnd.isHovering);
+  expect(target1.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target1.dnd!.isHovering).toBeTruthy();
 
-  t.ok(target2.dnd.isHoveringShallowly);
-  t.ok(target2.dnd.isHovering);
+  expect(target2.dnd!.isHoveringShallowly).toBeTruthy ();
+  expect(target2.dnd!.isHovering).toBeTruthy();
 
-  t.notOk(target3.dnd.isHoveringShallowly);
-  t.notOk(target3.dnd.isHovering);
+  expect(target3.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target3.dnd!.isHovering).toBeFalsy();
 
-  t.deepEqual(_track, [
+  expect(_track).toEqual([
     {
       event: 'hover on tbox_big',
       location: {
@@ -430,28 +418,28 @@ test('drag type one, hover over 2 targets, drop on inner target', t => {
   fireEvent(documentElement, 'mouseup', {which: 1, clientX: 156, clientY: 65});
 
   // finished
-  t.notOk(dndService.isProcessing);
-  t.notOk(dndService.model);
+  expect(dndService.isProcessing).toBeFalsy();
+  expect(dndService.model).toBeFalsy();
 
-  t.notOk(target1.dnd.isProcessing);
-  t.notOk(target1.dnd.isHoveringShallowly);
-  t.notOk(target1.dnd.isHovering);
-  t.notOk(target1.dnd.canDrop);
-  t.notOk(target1.dnd.model);
+  expect(target1.dnd!.isProcessing).toBeFalsy();
+  expect(target1.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target1.dnd!.isHovering).toBeFalsy();
+  expect(target1.dnd!.canDrop).toBeFalsy();
+  expect(target1.dnd!.model).toBeFalsy();
 
-  t.notOk(target2.dnd.isProcessing);
-  t.notOk(target2.dnd.isHoveringShallowly);
-  t.notOk(target2.dnd.isHovering);
-  t.notOk(target2.dnd.canDrop);
-  t.notOk(target2.dnd.model);
+  expect(target2.dnd!.isProcessing).toBeFalsy();
+  expect(target2.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target2.dnd!.isHovering).toBeFalsy();
+  expect(target2.dnd!.canDrop).toBeFalsy();
+  expect(target2.dnd!.model).toBeFalsy();
 
-  t.notOk(target3.dnd.isProcessing);
-  t.notOk(target3.dnd.isHoveringShallowly);
-  t.notOk(target3.dnd.isHovering);
-  t.notOk(target3.dnd.canDrop);
-  t.notOk(target3.dnd.model);
+  expect(target3.dnd!.isProcessing).toBeFalsy();
+  expect(target3.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target3.dnd!.isHovering).toBeFalsy();
+  expect(target3.dnd!.canDrop).toBeFalsy();
+  expect(target3.dnd!.model).toBeFalsy();
 
-  t.deepEqual(_track, [
+  expect(_track).toEqual([
     { event: 'dnd:willEnd', isProcessing: true, model: { name: 'model1', type: 'one' } },
     {
       event: 'drop on tbox_small_inner',
@@ -467,17 +455,16 @@ test('drag type one, hover over 2 targets, drop on inner target', t => {
   ]);
 
   clearTrack();
-  t.end();
 });
 
-test('drag type one with no preview, drop on outer target', t => {
+test('drag type one with no preview, drop on outer target', () => {
   const m = {type: 'one', name: 'model1'};
 
   fireEvent(box_0_1, 'mousedown', {which: 1, clientX: 5, clientY: 60});
   // first small movement, this is where dnd starts
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 6, clientY: 60});
   const preview = $('.dnd-preview');
-  t.equal(preview.length, 0);
+  expect(preview.length).toBe(0);
   // following movement re-position preview.
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 8, clientY: 60});
 
@@ -486,25 +473,25 @@ test('drag type one with no preview, drop on outer target', t => {
   // hover over tbox_big move 125px to the right, move 5px down
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 131, clientY: 65});
 
-  t.ok(target1.dnd.isProcessing);
-  t.ok(target1.dnd.isHoveringShallowly);
-  t.ok(target1.dnd.isHovering);
-  t.ok(target1.dnd.canDrop);
-  t.deepEqual(target1.dnd.model, m);
+  expect(target1.dnd!.isProcessing).toBeTruthy();
+  expect(target1.dnd!.isHoveringShallowly).toBeTruthy();
+  expect(target1.dnd!.isHovering).toBeTruthy();
+  expect(target1.dnd!.canDrop).toBeTruthy();
+  expect(target1.dnd!.model).toEqual(m);
 
-  t.ok(target2.dnd.isProcessing);
-  t.notOk(target2.dnd.isHoveringShallowly);
-  t.notOk(target2.dnd.isHovering);
-  t.ok(target2.dnd.canDrop);
-  t.deepEqual(target2.dnd.model, m);
+  expect(target2.dnd!.isProcessing).toBeTruthy();
+  expect(target2.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target2.dnd!.isHovering).toBeFalsy();
+  expect(target2.dnd!.canDrop).toBeTruthy();
+  expect(target2.dnd!.model).toEqual(m);
 
-  t.ok(target3.dnd.isProcessing);
-  t.notOk(target3.dnd.isHoveringShallowly);
-  t.notOk(target3.dnd.isHovering);
-  t.notOk(target3.dnd.canDrop);
-  t.deepEqual(target3.dnd.model, m);
+  expect(target3.dnd!.isProcessing).toBeTruthy();
+  expect(target3.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target3.dnd!.isHovering).toBeFalsy();
+  expect(target3.dnd!.canDrop).toBeFalsy();
+  expect(target3.dnd!.model).toEqual(m);
 
-  t.deepEqual(_track, [
+  expect(_track).toEqual([
     {
       event: 'hover on tbox_big',
       location: {
@@ -523,28 +510,28 @@ test('drag type one with no preview, drop on outer target', t => {
   fireEvent(documentElement, 'mouseup', {which: 1, clientX: 131, clientY: 65});
 
   // finished
-  t.notOk(dndService.isProcessing);
-  t.notOk(dndService.model);
+  expect(dndService.isProcessing).toBeFalsy();
+  expect(dndService.model).toBeFalsy();
 
-  t.notOk(target1.dnd.isProcessing);
-  t.notOk(target1.dnd.isHoveringShallowly);
-  t.notOk(target1.dnd.isHovering);
-  t.notOk(target1.dnd.canDrop);
-  t.notOk(target1.dnd.model);
+  expect(target1.dnd!.isProcessing).toBeFalsy();
+  expect(target1.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target1.dnd!.isHovering).toBeFalsy();
+  expect(target1.dnd!.canDrop).toBeFalsy();
+  expect(target1.dnd!.model).toBeFalsy();
 
-  t.notOk(target2.dnd.isProcessing);
-  t.notOk(target2.dnd.isHoveringShallowly);
-  t.notOk(target2.dnd.isHovering);
-  t.notOk(target2.dnd.canDrop);
-  t.notOk(target2.dnd.model);
+  expect(target2.dnd!.isProcessing).toBeFalsy();
+  expect(target2.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target2.dnd!.isHovering).toBeFalsy();
+  expect(target2.dnd!.canDrop).toBeFalsy();
+  expect(target2.dnd!.model).toBeFalsy();
 
-  t.notOk(target3.dnd.isProcessing);
-  t.notOk(target3.dnd.isHoveringShallowly);
-  t.notOk(target3.dnd.isHovering);
-  t.notOk(target3.dnd.canDrop);
-  t.notOk(target3.dnd.model);
+  expect(target3.dnd!.isProcessing).toBeFalsy();
+  expect(target3.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target3.dnd!.isHovering).toBeFalsy();
+  expect(target3.dnd!.canDrop).toBeFalsy();
+  expect(target3.dnd!.model).toBeFalsy();
 
-  t.deepEqual(_track, [
+  expect(_track).toEqual([
     { event: 'dnd:willEnd', isProcessing: true, model: { name: 'model1', type: 'one' } },
     {
       event: 'drop on tbox_big',
@@ -560,52 +547,51 @@ test('drag type one with no preview, drop on outer target', t => {
   ]);
 
   clearTrack();
-  t.end();
 });
 
-test('drag type two with customised preview, drop on invalid target', t => {
+test('drag type two with customised preview, drop on invalid target', () => {
   const m = {type: 'two', name: 'model2'};
 
   fireEvent(box_0_2, 'mousedown', {which: 1, clientX: 5, clientY: 110});
   // first small movement, this is where dnd starts
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 6, clientY: 110});
   const preview = $('.dnd-preview');
-  t.equal(preview.length, 1);
-  t.equal(preview.css('left'), '0px');
-  t.equal(preview.css('top'), '100px');
-  t.equal(preview.css('width'), '25px', 'customised width, not source element width.');
-  t.equal(preview.css('height'), '20px', 'customised height, not source element height.');
+  expect(preview.length).toBe(1);
+  expect(preview.css('left'), '0px');
+  expect(preview.css('top'), '100px');
+  expect(preview.css('width')).toBe('25px'); // customised width, not source element width.
+  expect(preview.css('height')).toBe('20px'); // customised height, not source element height.
 
 
   // following movement re-position preview.
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 8, clientY: 110});
-  t.equal(preview.css('left'), '2px');
-  t.equal(preview.css('top'), '100px');
+  expect(preview.css('left'), '2px');
+  expect(preview.css('top'), '100px');
 
   clearTrack();
 
   // hover over tbox_big move 125px to the right, move 5px down
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 131, clientY: 115});
 
-  t.ok(target1.dnd.isProcessing);
-  t.notOk(target1.dnd.isHoveringShallowly, 'no hover on invalid target');
-  t.notOk(target1.dnd.isHovering, 'no hover on invalid target');
-  t.notOk(target1.dnd.canDrop);
-  t.deepEqual(target1.dnd.model, m);
+  expect(target1.dnd!.isProcessing).toBeTruthy();
+  expect(target1.dnd!.isHoveringShallowly, 'no hover on invalid target').toBeFalsy();
+  expect(target1.dnd!.isHovering, 'no hover on invalid target').toBeFalsy();
+  expect(target1.dnd!.canDrop).toBeFalsy();
+  expect(target1.dnd!.model).toEqual(m);
 
-  t.ok(target2.dnd.isProcessing);
-  t.notOk(target2.dnd.isHoveringShallowly);
-  t.notOk(target2.dnd.isHovering);
-  t.ok(target2.dnd.canDrop);
-  t.deepEqual(target2.dnd.model, m);
+  expect(target2.dnd!.isProcessing).toBeTruthy();
+  expect(target2.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target2.dnd!.isHovering).toBeFalsy();
+  expect(target2.dnd!.canDrop).toBeTruthy();
+  expect(target2.dnd!.model).toEqual(m);
 
-  t.ok(target3.dnd.isProcessing);
-  t.notOk(target3.dnd.isHoveringShallowly);
-  t.notOk(target3.dnd.isHovering);
-  t.ok(target3.dnd.canDrop);
-  t.deepEqual(target3.dnd.model, m);
+  expect(target3.dnd!.isProcessing).toBeTruthy();
+  expect(target3.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target3.dnd!.isHovering).toBeFalsy();
+  expect(target3.dnd!.canDrop).toBeTruthy();
+  expect(target3.dnd!.model).toEqual(m);
 
-  t.deepEqual(_track, []);
+  expect(_track).toEqual([]);
 
   clearTrack();
 
@@ -613,82 +599,81 @@ test('drag type two with customised preview, drop on invalid target', t => {
   fireEvent(documentElement, 'mouseup', {which: 1, clientX: 131, clientY: 115});
 
   // finished
-  t.notOk(dndService.isProcessing);
-  t.notOk(dndService.model);
+  expect(dndService.isProcessing).toBeFalsy();
+  expect(dndService.model).toBeFalsy();
 
-  t.notOk(target1.dnd.isProcessing);
-  t.notOk(target1.dnd.isHoveringShallowly);
-  t.notOk(target1.dnd.isHovering);
-  t.notOk(target1.dnd.canDrop);
-  t.notOk(target1.dnd.model);
+  expect(target1.dnd!.isProcessing).toBeFalsy();
+  expect(target1.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target1.dnd!.isHovering).toBeFalsy();
+  expect(target1.dnd!.canDrop).toBeFalsy();
+  expect(target1.dnd!.model).toBeFalsy();
 
-  t.notOk(target2.dnd.isProcessing);
-  t.notOk(target2.dnd.isHoveringShallowly);
-  t.notOk(target2.dnd.isHovering);
-  t.notOk(target2.dnd.canDrop);
-  t.notOk(target2.dnd.model);
+  expect(target2.dnd!.isProcessing).toBeFalsy();
+  expect(target2.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target2.dnd!.isHovering).toBeFalsy();
+  expect(target2.dnd!.canDrop).toBeFalsy();
+  expect(target2.dnd!.model).toBeFalsy();
 
-  t.notOk(target3.dnd.isProcessing);
-  t.notOk(target3.dnd.isHoveringShallowly);
-  t.notOk(target3.dnd.isHovering);
-  t.notOk(target3.dnd.canDrop);
-  t.notOk(target3.dnd.model);
+  expect(target3.dnd!.isProcessing).toBeFalsy();
+  expect(target3.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target3.dnd!.isHovering).toBeFalsy();
+  expect(target3.dnd!.canDrop).toBeFalsy();
+  expect(target3.dnd!.model).toBeFalsy();
 
-  t.deepEqual(_track, [
+  expect(_track).toEqual([
     { event: 'dnd:willEnd', isProcessing: true, model: { name: 'model2', type: 'two' } },
     { event: 'dnd:didEnd', isProcessing: undefined, model: undefined }
-  ], 'no drop recorded');
+  ]); // no drop recorded
 
   clearTrack();
-  t.end();
 });
 
-test('drag type two with customised preview, hideCursor, centerPreviewToMousePosition, dynamicly add new target, drop on target', t => {
+test('drag type two with customised preview, hideCursor, centerPreviewToMousePosition, dynamicly add new target, drop on target', () => {
   const m = {type: 'two', name: 'model2'};
 
   fireEvent(box_0_3, 'mousedown', {which: 1, clientX: 10, clientY: 160});
 
-  t.notOk($('body').hasClass('dnd-hide-cursor'));
+  expect($('body').hasClass('dnd-hide-cursor')).toBeFalsy();
   // first small movement, this is where dnd starts
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 11, clientY: 160});
   const preview = $('.dnd-preview');
-  t.equal(preview.length, 1);
-  t.equal(preview.css('left'), '6px');
-  t.equal(preview.css('top'), '155px');
-  t.equal(preview.css('width'), '10px', 'customised width, not source element width.');
-  t.equal(preview.css('height'), '10px', 'customised height, not source element height.');
+  expect(preview.length).toBe(1);
+  expect(preview.css('left')).toBe('6px');
+  expect(preview.css('top')).toBe('155px');
+  expect(preview.css('width')).toBe('10px'); // customised width, not source element width.
+  expect(preview.css('height')).toBe('10px'); // customised height, not source element height.
 
-  t.ok($('body').hasClass('dnd-hide-cursor'));
+  expect($('body').hasClass('dnd-hide-cursor')).toBeTruthy();
 
   // following movement re-position preview.
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 13, clientY: 160});
-  t.equal(preview.css('left'), '8px');
-  t.equal(preview.css('top'), '155px');
+  expect(preview.css('left'), '8px');
+  expect(preview.css('top'), '155px');
 
   clearTrack();
 
   //hover over tbox_big2 move 350px to the right, move 5px down
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 361, clientY: 165});
 
-  t.ok(target1.dnd.isProcessing);
-  t.notOk(target1.dnd.isHoveringShallowly);
-  t.notOk(target1.dnd.isHovering);
-  t.notOk(target1.dnd.canDrop);
-  t.deepEqual(target1.dnd.model, m);
+  expect(target1.dnd!.isProcessing).toBeTruthy();
+  expect(target1.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target1.dnd!.isHovering).toBeFalsy();
+  expect(target1.dnd!.canDrop).toBeFalsy();
+  expect(target1.dnd!.model).toEqual(m);
 
-  t.ok(target2.dnd.isProcessing);
-  t.notOk(target2.dnd.isHoveringShallowly);
-  t.notOk(target2.dnd.isHovering);
-  t.ok(target2.dnd.canDrop);
-  t.deepEqual(target2.dnd.model, m);
+  expect(target2.dnd!.isProcessing).toBeTruthy();
+  expect(target2.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target2.dnd!.isHovering).toBeFalsy();
+  expect(target2.dnd!.canDrop).toBeTruthy();
+  expect(target2.dnd!.model).toEqual(m);
 
-  t.ok(target3.dnd.isProcessing);
-  t.ok(target3.dnd.isHoveringShallowly);
-  t.ok(target3.dnd.isHovering);
-  t.ok(target3.dnd.canDrop);
-  t.deepEqual(target3.dnd.model, m);
+  expect(target3.dnd!.isProcessing).toBeTruthy();
+  expect(target3.dnd!.isHoveringShallowly).toBeTruthy();
+  expect(target3.dnd!.isHovering).toBeTruthy();
+  expect(target3.dnd!.canDrop).toBeTruthy();
+  expect(target3.dnd!.model).toEqual(m);
 
-  t.deepEqual(_track, [
+  expect(_track).toEqual([
     {
       event: 'hover on tbox_big2',
       location: {
@@ -705,44 +690,44 @@ test('drag type two with customised preview, hideCursor, centerPreviewToMousePos
 
   dndService.addTarget(target4);
   // new target has dnd inited.
-  t.ok(target4.dnd.isProcessing);
-  t.notOk(target4.dnd.isHoveringShallowly);
-  t.notOk(target4.dnd.isHovering);
-  t.ok(target4.dnd.canDrop);
-  t.deepEqual(target4.dnd.model, m);
+  expect(target4.dnd!.isProcessing).toBeTruthy();
+  expect(target4.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target4.dnd!.isHovering).toBeFalsy();
+  expect(target4.dnd!.canDrop).toBeTruthy();
+  expect(target4.dnd!.model).toEqual(m);
 
   //drop on tbox_big2
   fireEvent(documentElement, 'mouseup', {which: 1, clientX: 361, clientY: 165});
 
   // finished
-  t.notOk(dndService.isProcessing);
-  t.notOk(dndService.model);
+  expect(dndService.isProcessing).toBeFalsy();
+  expect(dndService.model).toBeFalsy();
 
-  t.notOk(target1.dnd.isProcessing);
-  t.notOk(target1.dnd.isHoveringShallowly);
-  t.notOk(target1.dnd.isHovering);
-  t.notOk(target1.dnd.canDrop);
-  t.notOk(target1.dnd.model);
+  expect(target1.dnd!.isProcessing).toBeFalsy();
+  expect(target1.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target1.dnd!.isHovering).toBeFalsy();
+  expect(target1.dnd!.canDrop).toBeFalsy();
+  expect(target1.dnd!.model).toBeFalsy();
 
-  t.notOk(target2.dnd.isProcessing);
-  t.notOk(target2.dnd.isHoveringShallowly);
-  t.notOk(target2.dnd.isHovering);
-  t.notOk(target2.dnd.canDrop);
-  t.notOk(target2.dnd.model);
+  expect(target2.dnd!.isProcessing).toBeFalsy();
+  expect(target2.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target2.dnd!.isHovering).toBeFalsy();
+  expect(target2.dnd!.canDrop).toBeFalsy();
+  expect(target2.dnd!.model).toBeFalsy();
 
-  t.notOk(target3.dnd.isProcessing);
-  t.notOk(target3.dnd.isHoveringShallowly);
-  t.notOk(target3.dnd.isHovering);
-  t.notOk(target3.dnd.canDrop);
-  t.notOk(target3.dnd.model);
+  expect(target3.dnd!.isProcessing).toBeFalsy();
+  expect(target3.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target3.dnd!.isHovering).toBeFalsy();
+  expect(target3.dnd!.canDrop).toBeFalsy();
+  expect(target3.dnd!.model).toBeFalsy();
 
-  t.notOk(target4.dnd.isProcessing);
-  t.notOk(target4.dnd.isHoveringShallowly);
-  t.notOk(target4.dnd.isHovering);
-  t.notOk(target4.dnd.canDrop);
-  t.notOk(target4.dnd.model);
+  expect(target4.dnd!.isProcessing).toBeFalsy();
+  expect(target4.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target4.dnd!.isHovering).toBeFalsy();
+  expect(target4.dnd!.canDrop).toBeFalsy();
+  expect(target4.dnd!.model).toBeFalsy();
 
-  t.deepEqual(_track, [
+  expect(_track).toEqual([
     { event: 'dnd:willEnd', isProcessing: true, model: { name: 'model2', type: 'two' } },
     {
       event: 'drop on tbox_big2',
@@ -758,11 +743,10 @@ test('drag type two with customised preview, hideCursor, centerPreviewToMousePos
   ]);
 
   clearTrack();
-  t.end();
 });
 
-test('drag type two outside of handler has no effect', t => {
-  const m = {type: 'two', name: 'model2'};
+test('drag type two outside of handler has no effect', () => {
+  // const m = {type: 'two', name: 'model2'};
 
   fireEvent(box_0_4, 'mousedown', {which: 1, clientX: 20, clientY: 420});
 
@@ -771,63 +755,61 @@ test('drag type two outside of handler has no effect', t => {
 
   // since out of handler, dnd doesn't start
   const preview = $('.dnd-preview');
-  t.equal(preview.length, 0);
-  t.notOk(dndService.isProcessing);
-  t.notOk(dndService.model);
-
-  t.end();
+  expect(preview.length).toBe(0);
+  expect(dndService.isProcessing).toBeFalsy();
+  expect(dndService.model).toBeFalsy();
 });
 
-test('drag type two inside of handler, drop on target', t => {
+test('drag type two inside of handler, drop on target', () => {
   const m = {type: 'two', name: 'model2'};
 
   fireEvent(box_0_4_handler, 'mousedown', {which: 1, clientX: 10, clientY: 240});
 
   // only mouse down, not yet dnd;
-  t.notOk(dndService.isProcessing);
-  t.notOk(dndService.model);
+  expect(dndService.isProcessing).toBeFalsy();
+  expect(dndService.model).toBeFalsy();
 
-  t.deepEqual(_track, []);
+  expect(_track).toEqual([]);
 
   // first small movement, this is where dnd starts
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 11, clientY: 240});
 
   // moved mouse, dnd starts
-  t.ok(dndService.isProcessing);
-  t.deepEqual(dndService.model, m);
+  expect(dndService.isProcessing).toBeTruthy();
+  expect(dndService.model).toEqual(m);
 
-  t.ok(target1.dnd.isProcessing);
-  t.notOk(target1.dnd.isHoveringShallowly);
-  t.notOk(target1.dnd.isHovering);
-  t.notOk(target1.dnd.canDrop);
-  t.deepEqual(target1.dnd.model, m);
+  expect(target1.dnd!.isProcessing).toBeTruthy();
+  expect(target1.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target1.dnd!.isHovering).toBeFalsy();
+  expect(target1.dnd!.canDrop).toBeFalsy();
+  expect(target1.dnd!.model).toEqual(m);
 
-  t.ok(target2.dnd.isProcessing);
-  t.notOk(target2.dnd.isHoveringShallowly);
-  t.notOk(target2.dnd.isHovering);
-  t.ok(target2.dnd.canDrop);
-  t.deepEqual(target2.dnd.model, m);
+  expect(target2.dnd!.isProcessing).toBeTruthy();
+  expect(target2.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target2.dnd!.isHovering).toBeFalsy();
+  expect(target2.dnd!.canDrop).toBeTruthy();
+  expect(target2.dnd!.model).toEqual(m);
 
-  t.ok(target3.dnd.isProcessing);
-  t.notOk(target3.dnd.isHoveringShallowly);
-  t.notOk(target3.dnd.isHovering);
-  t.ok(target3.dnd.canDrop);
-  t.deepEqual(target3.dnd.model, m);
+  expect(target3.dnd!.isProcessing).toBeTruthy();
+  expect(target3.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target3.dnd!.isHovering).toBeFalsy();
+  expect(target3.dnd!.canDrop).toBeTruthy();
+  expect(target3.dnd!.model).toEqual(m);
 
-  t.ok(target4.dnd.isProcessing);
-  t.notOk(target4.dnd.isHoveringShallowly);
-  t.notOk(target4.dnd.isHovering);
-  t.ok(target4.dnd.canDrop);
-  t.deepEqual(target4.dnd.model, m);
+  expect(target4.dnd!.isProcessing).toBeTruthy();
+  expect(target4.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target4.dnd!.isHovering).toBeFalsy();
+  expect(target4.dnd!.canDrop).toBeTruthy();
+  expect(target4.dnd!.model).toEqual(m);
 
   // dndPreview() returns undefined, fall back to default preview.
   const preview = $('.dnd-preview');
-  t.equal(preview.length, 1);
-  t.equal(preview.css('left'), '0px'); // initial position of preview
-  t.equal(preview.css('top'), '200px');
-  t.equal(preview.text(), '04');
+  expect(preview.length).toBe(1);
+  expect(preview.css('left')).toBe('0px'); // initial position of preview
+  expect(preview.css('top')).toBe('200px');
+  expect(preview.text()).toBe('04');
 
-  t.deepEqual(_track, [
+  expect(_track).toEqual([
     { event: 'dnd:willStart', isProcessing: undefined, model: undefined },
     { event: 'dnd:didStart', isProcessing: true, model: { name: 'model2', type: 'two' } }
   ]);
@@ -836,41 +818,41 @@ test('drag type two inside of handler, drop on target', t => {
 
   // following movement re-position preview.
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 13, clientY: 240});
-  t.equal(preview.css('left'), '2px'); // moved 2px to the right
-  t.equal(preview.css('top'), '200px');
+  expect(preview.css('left'), '2px'); // moved 2px to the right
+  expect(preview.css('top'), '200px');
 
-  t.deepEqual(_track, []);
+  expect(_track).toEqual([]);
 
   // move over target3.
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 361, clientY: 240});
-  t.equal(preview.css('left'), '350px'); // moved 350px to the right
-  t.equal(preview.css('top'), '200px');
+  expect(preview.css('left'), '350px'); // moved 350px to the right
+  expect(preview.css('top'), '200px');
 
-  t.ok(target1.dnd.isProcessing);
-  t.notOk(target1.dnd.isHoveringShallowly);
-  t.notOk(target1.dnd.isHovering);
-  t.notOk(target1.dnd.canDrop);
-  t.deepEqual(target1.dnd.model, m);
+  expect(target1.dnd!.isProcessing).toBeTruthy();
+  expect(target1.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target1.dnd!.isHovering).toBeFalsy();
+  expect(target1.dnd!.canDrop).toBeFalsy();
+  expect(target1.dnd!.model).toEqual(m);
 
-  t.ok(target2.dnd.isProcessing);
-  t.notOk(target2.dnd.isHoveringShallowly);
-  t.notOk(target2.dnd.isHovering);
-  t.ok(target2.dnd.canDrop);
-  t.deepEqual(target2.dnd.model, m);
+  expect(target2.dnd!.isProcessing).toBeTruthy();
+  expect(target2.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target2.dnd!.isHovering).toBeFalsy();
+  expect(target2.dnd!.canDrop).toBeTruthy();
+  expect(target2.dnd!.model).toEqual(m);
 
-  t.ok(target3.dnd.isProcessing);
-  t.ok(target3.dnd.isHoveringShallowly);
-  t.ok(target3.dnd.isHovering);
-  t.ok(target3.dnd.canDrop);
-  t.deepEqual(target3.dnd.model, m);
+  expect(target3.dnd!.isProcessing).toBeTruthy();
+  expect(target3.dnd!.isHoveringShallowly).toBeTruthy();
+  expect(target3.dnd!.isHovering).toBeTruthy();
+  expect(target3.dnd!.canDrop).toBeTruthy();
+  expect(target3.dnd!.model).toEqual(m);
 
-  t.ok(target4.dnd.isProcessing);
-  t.notOk(target4.dnd.isHoveringShallowly);
-  t.notOk(target4.dnd.isHovering);
-  t.ok(target4.dnd.canDrop);
-  t.deepEqual(target4.dnd.model, m);
+  expect(target4.dnd!.isProcessing).toBeTruthy();
+  expect(target4.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target4.dnd!.isHovering).toBeFalsy();
+  expect(target4.dnd!.canDrop).toBeTruthy();
+  expect(target4.dnd!.model).toEqual(m);
 
-  t.deepEqual(_track, [
+  expect(_track).toEqual([
     {
       event: 'hover on tbox_big2',
       location: {
@@ -887,9 +869,9 @@ test('drag type two inside of handler, drop on target', t => {
 
   fireEvent(documentElement, 'mouseup', {which: 1, clientX: 361, clientY: 240});
 
-  t.equal($('.dnd-preview').length, 0);
+  expect($('.dnd-preview').length).toBe(0);
 
-  t.deepEqual(_track, [
+  expect(_track).toEqual([
     { event: 'dnd:willEnd', isProcessing: true, model: { name: 'model2', type: 'two' } },
     {
       event: 'drop on tbox_big2',
@@ -905,11 +887,9 @@ test('drag type two inside of handler, drop on target', t => {
   ]);
 
   clearTrack();
-
-  t.end();
 });
 
-test('preview size is correct no matter what box-sizing is in use', t => {
+test('preview size is correct no matter what box-sizing is in use', () => {
 
   // box_content_box
   fireEvent(box_content_box, 'mousedown', {which: 1, clientX: 20, clientY: 270});
@@ -918,12 +898,12 @@ test('preview size is correct no matter what box-sizing is in use', t => {
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 21, clientY: 270});
 
   let preview = $('.dnd-preview');
-  t.equal(preview.length, 1);
+  expect(preview.length).toBe(1);
   let boundingRect = preview.get(0).getBoundingClientRect();
-  t.equal(boundingRect.left, 10);
-  t.equal(boundingRect.top, 260);
-  t.equal(boundingRect.width, 25 + 5 * 2 + 1 * 2);
-  t.equal(boundingRect.height, 25 + 5 * 2 + 1 * 2);
+  expect(boundingRect.left).toBe(10);
+  expect(boundingRect.top).toBe(260);
+  expect(boundingRect.width).toBe(25 + 5 * 2 + 1 * 2);
+  expect(boundingRect.height).toBe(25 + 5 * 2 + 1 * 2);
 
   fireEvent(documentElement, 'mouseup', {which: 1, clientX: 21, clientY: 270});
 
@@ -934,45 +914,42 @@ test('preview size is correct no matter what box-sizing is in use', t => {
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 71, clientY: 270});
 
   preview = $('.dnd-preview');
-  t.equal(preview.length, 1);
+  expect(preview.length).toBe(1);
   boundingRect = preview.get(0).getBoundingClientRect();
-  t.equal(boundingRect.left, 60);
-  t.equal(boundingRect.top, 260);
-  t.equal(boundingRect.width, 25);
-  t.equal(boundingRect.height, 25);
+  expect(boundingRect.left).toBe(60);
+  expect(boundingRect.top).toBe(260);
+  expect(boundingRect.width).toBe(25);
+  expect(boundingRect.height).toBe(25);
 
   fireEvent(documentElement, 'mouseup', {which: 1, clientX: 71, clientY: 270});
-
-  t.end();
 });
 
-test('cannnot drag a source with false canDrag return', t => {
+test('cannnot drag a source with false canDrag return', () => {
   // box_0_5
   fireEvent(box_0_5, 'mousedown', {which: 1, clientX: 5, clientY: 10});
 
   // first small movement, this is where dnd starts
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 6, clientY: 10});
 
-  t.notOk(dndService.isProcessing);
+  expect(dndService.isProcessing).toBeFalsy();
 
   fireEvent(documentElement, 'mouseup', {which: 1, clientX: 6, clientY: 10});
-  t.end();
 });
 
-test('drag type one, cancel with esc key', t => {
-  const m = {type: 'one', name: 'model1'};
+test('drag type one, cancel with esc key', () => {
+  // const m = {type: 'one', name: 'model1'};
 
   fireEvent(box_0_0, 'mousedown', {which: 1, clientX: 5, clientY: 10});
-  t.notOk($('body').hasClass('dnd-hide-cursor'));
+  expect($('body').hasClass('dnd-hide-cursor')).toBeFalsy();
 
   // first small movement, this is where dnd starts
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 6, clientY: 10});
   const preview = $('.dnd-preview');
   // following movement re-position preview.
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 8, clientY: 10});
-  t.equal(preview.css('left'), '2px'); // moved 2px to the right
-  t.equal(preview.css('top'), '0px');
-  t.notOk($('body').hasClass('dnd-hide-cursor'));
+  expect(preview.css('left'), '2px'); // moved 2px to the right
+  expect(preview.css('top'), '0px');
+  expect($('body').hasClass('dnd-hide-cursor')).toBeFalsy();
 
   clearTrack();
 
@@ -981,77 +958,74 @@ test('drag type one, cancel with esc key', t => {
 
   // After esc, hover over tbox_big move 125px to the right, move 5px down
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 131, clientY: 15});
-  t.notOk(document.querySelector('.dnd-preview'));
-  t.notOk(dndService.isProcessing);
-  t.notOk(dndService.model);
+  expect(document.querySelector('.dnd-preview')).toBeFalsy();
+  expect(dndService.isProcessing).toBeFalsy();
+  expect(dndService.model).toBeFalsy();
 
-  t.notOk(target1.dnd.isProcessing);
-  t.notOk(target1.dnd.isHoveringShallowly);
-  t.notOk(target1.dnd.isHovering);
-  t.notOk(target1.dnd.canDrop);
-  t.notOk(target1.dnd.model);
+  expect(target1.dnd!.isProcessing).toBeFalsy();
+  expect(target1.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target1.dnd!.isHovering).toBeFalsy();
+  expect(target1.dnd!.canDrop).toBeFalsy();
+  expect(target1.dnd!.model).toBeFalsy();
 
-  t.notOk(target2.dnd.isProcessing);
-  t.notOk(target2.dnd.isHoveringShallowly);
-  t.notOk(target2.dnd.isHovering);
-  t.notOk(target2.dnd.canDrop);
-  t.notOk(target2.dnd.model);
+  expect(target2.dnd!.isProcessing).toBeFalsy();
+  expect(target2.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target2.dnd!.isHovering).toBeFalsy();
+  expect(target2.dnd!.canDrop).toBeFalsy();
+  expect(target2.dnd!.model).toBeFalsy();
 
-  t.notOk(target3.dnd.isProcessing);
-  t.notOk(target3.dnd.isHoveringShallowly);
-  t.notOk(target3.dnd.isHovering);
-  t.notOk(target3.dnd.canDrop);
-  t.notOk(target3.dnd.model);
+  expect(target3.dnd!.isProcessing).toBeFalsy();
+  expect(target3.dnd!.isHoveringShallowly).toBeFalsy();
+  expect(target3.dnd!.isHovering).toBeFalsy();
+  expect(target3.dnd!.canDrop).toBeFalsy();
+  expect(target3.dnd!.model).toBeFalsy();
 
-  t.deepEqual(_track, [
+  expect(_track).toEqual([
     {event: 'dnd:didCancel', isProcessing: undefined, model: undefined}
   ]);
 
   // After esc, hover over tbox_small_inner move 150px to the right, move 55px down
   fireEvent(documentElement, 'mousemove', {which: 1, clientX: 156, clientY: 65});
-  t.notOk(document.querySelector('.dnd-preview'));
-  t.notOk(dndService.isProcessing);
-  t.notOk(dndService.model);
-  t.notOk(target1.dnd.isProcessing);
-  t.notOk(target2.dnd.isProcessing);
-  t.notOk(target3.dnd.isProcessing);
-  t.deepEqual(_track, [
+  expect(document.querySelector('.dnd-preview')).toBeFalsy();
+  expect(dndService.isProcessing).toBeFalsy();
+  expect(dndService.model).toBeFalsy();
+  expect(target1.dnd!.isProcessing).toBeFalsy();
+  expect(target2.dnd!.isProcessing).toBeFalsy();
+  expect(target3.dnd!.isProcessing).toBeFalsy();
+  expect(_track).toEqual([
     {event: 'dnd:didCancel', isProcessing: undefined, model: undefined}
   ]);
 
   // After esc, drop on tbox_small_inner
   fireEvent(documentElement, 'mouseup', {which: 1, clientX: 156, clientY: 65});
-  t.notOk(dndService.isProcessing);
-  t.notOk(dndService.model);
-  t.notOk(target1.dnd.isProcessing);
-  t.notOk(target2.dnd.isProcessing);
-  t.notOk(target3.dnd.isProcessing);
+  expect(dndService.isProcessing).toBeFalsy();
+  expect(dndService.model).toBeFalsy();
+  expect(target1.dnd!.isProcessing).toBeFalsy();
+  expect(target2.dnd!.isProcessing).toBeFalsy();
+  expect(target3.dnd!.isProcessing).toBeFalsy();
 
-  t.deepEqual(_track, [
+  expect(_track).toEqual([
     {event: 'dnd:didCancel', isProcessing: undefined, model: undefined}
   ]);
-
-  t.end();
 });
 
-test('removeSource, removeTarget', t => {
-  t.equal(dndService.dndSources.length, 8);
-  t.equal(dndService.dndTargets.length, 4);
+test('removeSource, removeTarget', () => {
+  expect(dndService.dndSources.length).toBe(8);
+  expect(dndService.dndTargets.length).toBe(4);
 
   dndService.removeSource(box_border_box);
-  t.equal(dndService.dndSources.length, 7);
-  t.equal(dndService.dndTargets.length, 4);
+  expect(dndService.dndSources.length).toBe(7);
+  expect(dndService.dndTargets.length).toBe(4);
 
   dndService.removeSource(box_0_0);
-  t.equal(dndService.dndSources.length, 6);
-  t.equal(dndService.dndTargets.length, 4);
+  expect(dndService.dndSources.length).toBe(6);
+  expect(dndService.dndTargets.length).toBe(4);
 
   dndService.removeTarget(tbox_small_inner);
-  t.equal(dndService.dndSources.length, 6);
-  t.equal(dndService.dndTargets.length, 3);
+  expect(dndService.dndSources.length).toBe(6);
+  expect(dndService.dndTargets.length).toBe(3);
 
   dndService.removeTarget(target1);
-  t.equal(dndService.dndSources.length, 6);
-  t.equal(dndService.dndTargets.length, 2);
-  t.end();
+  expect(dndService.dndSources.length).toBe(6);
+  expect(dndService.dndTargets.length).toBe(2);
 });
